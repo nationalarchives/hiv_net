@@ -55,9 +55,9 @@ frame = {
 entries = data['search-results']['entry']
 print(f'Found {len(entries)} 1st-level citers')
 for entry in entries:
-  if 'eid' in entry:
-    print(entry['eid'])
-    frame['target'].append(entry['eid'])
+  if 'dc:title' in entry:
+    print(entry['dc:title'])
+    frame['target'].append(entry['dc:title'])
   else:
     print('DOH')
 
