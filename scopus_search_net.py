@@ -2,8 +2,11 @@
 
 import os
 import json
+import pyvis
 import argparse
 import requests
+import pandas as pd
+import networkx as nx
 
 parser = argparse.ArgumentParser()
 parser.add_argument('query')
@@ -42,12 +45,26 @@ else:
     with open(f'{args.cache}/1.json', 'w') as f:
       json.dump(data, f, indent = 2)
 
+frame = {
+  'source': 0,
+  'target': [],
+  'type': 'Undirected',
+  'weight': 1,
+}
+
 entries = data['search-results']['entry']
 print(f'Found {len(entries)} 1st-level citers')
 for entry in entries:
   if 'eid' in entry:
     print(entry['eid'])
+    frame['target'].append(entry['eid'])
   else:
     print('DOH')
 
+#https://towardsdatascience.com/visualizing-networks-in-python-d70f4cbeb259re
+edges = pd.DataFrame.from_dict(frame)
+G = nx.from_pandas_edgelist(edges)
 
+net = pyvis.network.Network(notebook = True)
+net.from_nx(G)
+net.show('network.html')
