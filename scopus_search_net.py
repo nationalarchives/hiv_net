@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+#TODO: Really needs some factoring out to functions to keep the scope under control
+#      Particularly due to the ad-hoc instrumentation that I have thrown in here
+#TODO: My last note read "reporting should now be wrong but easy to fix"
+#      So presumably I had left myself an error that I thought would be obvious as the starting point for the next round of work
+#      But a couple of weeks later I find that I have no idea where I am.
+#Sample incantation: ./scopus_search_net.py -k keyfile 'AIDS : monitoring response to the public education campaign
+#Where keyfile contains an API key
 
 import os
 import sys
@@ -172,3 +179,18 @@ net = pyvis.network.Network(notebook = True, cdn_resources = 'remote')
 net.from_nx(G)
 print('Wrote graph to ', end = '')
 net.show('network.html')
+
+
+#TODO If time, draw a tree where the row is based on publciation year
+#     So some rows are empty
+#     But we can see the paper ripple through time
+#Tree? -- re https://stackoverflow.com/a/57512902
+#import matplotlib.pyplot as plt
+#import pydot
+#from networkx.drawing.nx_pydot import graphviz_layout
+#
+#T = nx.balanced_tree(2, 5)
+#
+#nx.draw(G, graphviz_layout(T, prog="dot"))
+#net.from_nx(G)
+#net.show('tree.html')
