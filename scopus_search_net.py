@@ -9,6 +9,7 @@ import argparse
 import requests
 import pandas as pd
 import networkx as nx
+from collections import defaultdict
 
 def get_citations(title, eid):
   headers = {
@@ -63,14 +64,22 @@ works = [
   {0: get_citations(args.title, 0)}, #Key 0 is a false EID for our starting point
 ]
 
+bad_lookup = 0
+errors = defaultdict(int)
 repeats = [{}]
 for d in range(1, args.depth):
+  print(f'Looking up citation level {d}')
   next_repeats = {}
   next_works = {}
   for source, citers in works[d - 1].items():
+    if 'fail' in citers:
+      print('Skipping citers for source that failed lookup', file = sys.stderr)
+      bad_lookup += 1
+      continue
     for citer in citers['search-results']['entry']:
-      if 'fail' in citer:
-        print('Skipping citers for source that failed lookup', file = sys.stderr)
+      if 'error' in citer:
+        errors[citer['error']] += 1
+        print(f'Skipping citers due to error "{citer["error"]}"', file = sys.stderr)
         continue
       title = citer['dc:title']
       eid   = citer['eid']
@@ -92,26 +101,48 @@ exploded = {
 }
 
 results = []
+
 for d in range(0, args.depth - 1):
   d_ordinal = i_engine.ordinal(d + 1)
   if args.verbose: print(f'{d_ordinal}-level citers')
   count = 0
   bad_count = 0
-  for source, citers in works[d].items():
-    for citer in citers['search-results']['entry']:
-      if 'dc:title' in citer:
-        if args.verbose: print('  ' + citer['dc:title'])
-        exploded['source'].append(source)
-        #exploded['target'].append(citer['dc:title'])
-        exploded['target'].append(citer['eid'])
-        count += 1
-      else:
-        if args.verbose: print('  DOH')
+  try:
+    for source, citers in works[d].items():
+      if 'search-results' in citer:
+        for citer in citers['search-results']['entry']:
+          if 'dc:title' in citer:
+            if args.verbose: print('  ' + citer['dc:title'])
+            exploded['source'].append(source)
+            #exploded['target'].append(citer['dc:title'])
+            exploded['target'].append(citer['eid'])
+            count += 1
+          else:
+            print(f'  No "dc:title" in citer["search-results"]["entry"] within source {source}. citer is:\n{citer}', file = sys.stderr)
+            bad_count += 1
+      elif 'fail' in citer:
+        print(f'  No "search-results" in citer, but found "fail". Implies lookup error. citer is:\n{citer}', file = sys.stderr)
         bad_count += 1
-  print(f'Found {count + bad_count} {d_ordinal}-level citers')
-  if bad_count != 0:
-    print(f'Of which, {bad_count} bad cases')
-  results.append({'good': count, 'bad': bad_count})
+      else:
+        print(f'  Some problem in citer loop', file = sys.stderr)
+        bad_count += 1
+    print(f'Found {count + bad_count} {d_ordinal}-level citers')
+    if bad_count != 0:
+      print(f'Of which, {bad_count} bad cases')
+    results.append({'good': count, 'bad': bad_count})
+  except Exception as e:
+    print(f'{d=}\n{d_ordinal=}\n{source=}\n{citers=}\n{citer=}', file = sys.stderr)
+    raise e
+
+#values for each member of works list
+total_lookup = 0
+for level in works:
+  total_lookup += len(level)
+  bad_lookup   += len([x for x in level.values() if 'fail' in x])
+print(f'{total_lookup - bad_lookup}/{total_lookup} good lookups')
+
+for k, v in errors.items():
+  print(f'Skipped lookups due to {k}: {v}')
 
 for d, r in enumerate(repeats):
   if len(r) == 0: continue
