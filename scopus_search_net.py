@@ -45,7 +45,7 @@ parser.add_argument('--force', '-f', action = 'store_true', help = 'Refetch data
 parser.add_argument('--key', '-k', help = 'Either an API key, or a file containing the API key')
 parser.add_argument('--cache', default = 'cache', help = 'Directory of cache files')
 parser.add_argument('--no-cache', action = 'store_true', help = 'Do not cache anything (implies --force)')
-parser.add_argument('--depth', '-d', default = 3, help = 'Depth of citation')
+parser.add_argument('--depth', '-d', default = 3, type = int, help = 'Depth of citation')
 parser.add_argument('--fail-on-error', action = 'store_true', help = 'Fail on error, instead of logging')
 parser.add_argument('--verbose', action = 'store_true')
 args = parser.parse_args()
